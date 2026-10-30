@@ -1,0 +1,106 @@
+Q: What is the atomic fetch/execute loop? 
+Ans:Atomic Fetch/Execute Loop（原子化取指/执行循环） 是 CPU 执行程序时最基本的概念模型。
+它描述 CPU 如何反复读取、执行指令，并更新自身状态。
+可以简单理解为：
+取出一条指令 → 执行这条指令 → 更新处理器状态 → 取下一条指令。
+
+考试重点
+CPI = 1 不代表 CPU 一定很快！
+
+课件指出：
+
+Cons: Long Clock Period
+
+原因：
+To accommodate the slowest instruction.
+
+\[
+T_{clock}=\max(200,200,500,400,250)
+\
+
+Single-Cycle：一条指令一个周期完成，不需要跨周期保存中间结果。
+
+Multi-Cycle：一条指令分多个周期执行，需要 Temporary Registers。
+
+Pipeline：多条指令同时执行，需要 Pipeline Registers 保存各阶段状态。
+
+架构	为什么需要额外寄存器？
+Single-Cycle	不需要额外的跨周期中间结果寄存器
+Multi-Cycle	同一条指令需要跨周期保存中间结果
+Pipeline	多条指令同时执行，需要保存每条指令的阶段状态
+
+Notice: 高CPI 不一定架构垃圾，而是这个指令花费更多clk执行，但是总clk可能暴增
+
+Multi-Cycle 虽然让不同指令使用不同数量的 Clock Cycles，但整个 CPU 仍然受到最长 Stage Delay 的限制。
+
+还有一个你值得记住的更深层概念
+你实际上已经接近 Pipeline Design 中一个很重要的优化方向：
+
+Stage Balancing（阶段均衡）。
+
+观察 Cycle 2：
+- Insn 0 正在 Decode。
+- Insn 1 正在 Fetch。
+观察 Cycle 3：
+- Insn 0 正在 Execute。
+- Insn 1 正在 Decode。
+- Insn 2 正在 Fetch。
+三条指令同时处于不同执行阶段！
+
+这就是 Inter-Instruction Parallelism（指令间并行性）。
+2. 这张课件的核心思想
+教授写了三句话，值得记住：
+
+When instruction advances from stage 1 to stage 2, next instruction enters stage 1.
+
+第一条指令进入下一个 Stage 时，下一条指令同时进入第一个 Stage。
+
+Maintains the illusion of sequential fetch/execute loop.
+
+虽然硬件内部多条指令并行工作，但对程序而言，依然维持顺序执行的架构行为。
+
+Instructions enter and leave at a MUCH FASTER rate.
+
+流水线填满以后，理想情况下每个 Clock Cycle 都能完成一条指令。
+
+为什么说 Pipeline 改善 Throughput，而非 Latency？
+
+Pipeline 并没有让第一条指令更早完成。
+
+它让后续指令不必等前一条指令完全结束才开始执行。
+
+Individual instruction takes the same number of stages — Not so accurate...
+
+这是在提醒你：真实 CPU 中，不同指令不一定经过完全相同的功能阶段。
+
+例如：
+- ADD 不需要真正访问 Data Memory。
+- LW 需要访问 Data Memory。
+- Branch 可能在较早阶段就完成条件判断和目标地址计算。
+所以，流水线的生产线类比只是帮助我们理解基本原理，真实 Datapath 更复杂。
+
+最后，记住这句话作为 Topic 5 的核心：
+Multi-Cycle divides one instruction into multiple cycles. Pipelining overlaps the execution of multiple instructions.
+
+中文：
+
+Multi-Cycle 把一条指令拆成多个周期；Pipeline 则让多条指令的执行阶段相互重叠。
+
+这就是二者最根本的区别。
+
+关于T=11ns：10 ns 是理想的逻辑延迟，额外的 1 ns 是寄存器带来的时序开销。
+\[
+T_{pipeline}=
+\max(T_{ins-mem},T_{regfile},T_{ALU},T_{data-mem},T_r)
+\]
+
+\[
+\begin{aligned}
+T_{single-cycle}={}&T_{ins-mem}\\
+&+T_{regfile}\\
+&+T_{ALU}\\
+&+T_{data-mem}\\
+&+T_r
+\end{aligned}
+\]
+一个是启动延迟，一个是稳定吞吐 
